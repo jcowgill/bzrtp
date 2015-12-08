@@ -8,19 +8,19 @@ LOCAL_MODULE := libbzrtp
 LOCAL_ARM_MODE := arm
 
 LOCAL_SRC_FILES =       src/bzrtp.c \
-						src/cryptoPolarssl.c \
+						src/cryptoMbedTLS.c \
 						src/cryptoUtils.c \
 						src/packetParser.c \
 						src/stateMachine.c \
 						src/zidCache.c \
 						src/pgpwords.c
 
-LOCAL_STATIC_LIBRARIES += polarssl \
+LOCAL_STATIC_LIBRARIES += mbedcrypto \
 			  liblpxml2
 
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH)/include \
-	$(LOCAL_PATH)/../externals/polarssl/include \
+	$(LOCAL_PATH)/../externals/mbedtls/include \
 	$(LOCAL_PATH)/../externals/libxml2/include \
 	$(LOCAL_PATH)/../externals/build/libxml2
 

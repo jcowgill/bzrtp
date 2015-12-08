@@ -37,7 +37,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\src\bzrtp.c" />
-    <ClCompile Include="..\..\..\src\cryptoPolarssl.c" />
+    <ClCompile Include="..\..\..\src\cryptoMbedTLS.c" />
     <ClCompile Include="..\..\..\src\cryptoUtils.c" />
     <ClCompile Include="..\..\..\src\packetParser.c" />
     <ClCompile Include="..\..\..\src\pgpwords.c" />
@@ -48,7 +48,7 @@
     <ProjectReference Include="..\..\..\..\build\xml2\xml2.vcxproj">
       <Project>{2b04de79-4d33-4405-ac01-c89e0593a71d}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\..\polarssl\build\windows10\polarssl\polarssl.vcxproj">
+    <ProjectReference Include="..\..\..\..\mbedtks\build\windows10\mbedtls\mbedtls.vcxproj">
       <Project>{88768dd9-5110-4ac8-8b0e-41cd7713e1a2}</Project>
     </ProjectReference>
   </ItemGroup>
@@ -95,7 +95,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <CompileAsWinRT>false</CompileAsWinRT>
-      <AdditionalIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\include;$(ProjectDir)..\..\..\include;$(ProjectDir)..\..\..\..\polarssl\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(Platform)\$(Configuration)\include;$(ProjectDir)..\..\..\include;$(ProjectDir)..\..\..\..\mbedtls\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>HAVE_LIBXML2;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

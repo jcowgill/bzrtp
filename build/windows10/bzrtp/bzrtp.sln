@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.22823.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bzrtp", "bzrtp.vcxproj", "{45C7723D-3107-4906-9633-F43ABE8A7147}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "polarssl", "..\..\..\..\polarssl\build\windows10\polarssl\polarssl.vcxproj", "{88768DD9-5110-4AC8-8B0E-41CD7713E1A2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mbedtls", "..\..\..\..\mbedtls\build\windows10\mbedtls\mbedtls.vcxproj", "{88768DD9-5110-4AC8-8B0E-41CD7713E1A2}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xml2", "..\..\..\..\build\xml2\xml2.vcxproj", "{2B04DE79-4D33-4405-AC01-C89E0593A71D}"
 EndProject
