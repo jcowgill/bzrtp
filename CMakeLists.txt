@@ -66,7 +66,7 @@ find_package(CUnit)
 		set(ENABLE_TESTS OFF CACHE BOOL "Enable compilation of tests" FORCE)
 	endif()
 endif()
-find_package(PolarSSL REQUIRED)
+find_package(MbedTLS REQUIRED COMPONENTS crypto)
 find_package(XML2)
 
 if(XML2_FOUND)
@@ -96,10 +96,10 @@ endif()
 include_directories(
 	include
 	${CMAKE_CURRENT_BINARY_DIR}
-	${POLARSSL_INCLUDE_DIRS}
+	${MBEDTLS_INCLUDE_DIRS}
 )
 
-set(LIBS ${POLARSSL_LIBRARIES})
+set(LIBS ${MBEDTLS_LIBRARIES})
 if(CUNIT_FOUND)
 	include_directories(${CUNIT_INCLUDE_DIRS})
 	list(APPEND LIBS ${CUNIT_LIBRARIES})
