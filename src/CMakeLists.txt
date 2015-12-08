@@ -22,7 +22,7 @@
 
 set(SOURCE_FILES
 	bzrtp.c
-	cryptoPolarssl.c
+	cryptoMbedTLS.c
 	cryptoUtils.c
 	packetParser.c
 	pgpwords.c

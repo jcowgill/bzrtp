@@ -8,7 +8,7 @@
  - Diffie-Hellman-Merkle 2048 and 3072 bits
  - Random number generator
 
- This functions are implemented by an external lib(polarssl but it can be other) and the functions
+ This functions are implemented by an external lib(mbedTLS but it can be other) and the functions
  wrapper depends on the external lib API.
 
  @author Johan Pascal

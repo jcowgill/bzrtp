@@ -1,7 +1,7 @@
 /**
- @file cryptoPolarssl.c
+ @file cryptoMbedTLS.c
 
- @brief bind zrtpCrypto functions to their polarSSL implementation
+ @brief bind zrtpCrypto functions to their mbedTLS implementation
 
  @author Johan Pascal
 
@@ -71,7 +71,7 @@ uint8_t bzrtpCrypto_getAvailableCryptoTypes(uint8_t algoType, uint8_t availableT
 			availableTypes[2] = ZRTP_KEYAGREEMENT_Mult; /* This one shall always be at the end of the list, it is just to inform the peer ZRTP endpoint that we support the Multichannel ZRTP */
 			return 3;
 			break;
-		case ZRTP_SAS_TYPE: /* the SAS function is implemented in cryptoUtils.c and then is not directly linked to the polarSSL crypto wrapper */
+		case ZRTP_SAS_TYPE: /* the SAS function is implemented in cryptoUtils.c and then is not directly linked to the mbedTLS crypto wrapper */
 			availableTypes[0] = ZRTP_SAS_B32;
 			availableTypes[1] = ZRTP_SAS_B256;
 			return 2;
@@ -119,48 +119,48 @@ uint8_t bzrtpCrypto_getMandatoryCryptoTypes(uint8_t algoType, uint8_t mandatoryT
  * @brief Structure to store all the contexts data needed for Random Number Generation
  *
  */
-typedef struct polarsslRNGContext_struct {
+typedef struct mbedtlsRNGContext_struct {
 	mbedtls_entropy_context entropyContext; /**< the entropy function context */
 	mbedtls_ctr_drbg_context rngContext; /**< the random number generator context */
-} polarsslRNGContext_t;
+} mbedtlsRNGContext_t;
 
 bzrtpRNGContext_t *bzrtpCrypto_startRNG(const uint8_t *entropyString, uint16_t entropyStringLength) {
 	bzrtpRNGContext_t *context;
 
-	/* create the polarssl context, it contains entropy and rng contexts */
-	polarsslRNGContext_t *polarsslContext = (polarsslRNGContext_t *)malloc(sizeof(polarsslRNGContext_t));
+	/* create the mbedtls context, it contains entropy and rng contexts */
+	mbedtlsRNGContext_t *mbedtlsContext = (mbedtlsRNGContext_t *)malloc(sizeof(mbedtlsRNGContext_t));
 	
-	mbedtls_entropy_init(&(polarsslContext->entropyContext)); /* init the polarssl entropy engine */
-	/* init the polarssl rng context */
-	mbedtls_ctr_drbg_init(&polarsslContext->rngContext);
-	if (mbedtls_ctr_drbg_seed(&polarsslContext->rngContext, mbedtls_entropy_func, &(polarsslContext->entropyContext), (const unsigned char *)entropyString, entropyStringLength) != 0) {
+	mbedtls_entropy_init(&(mbedtlsContext->entropyContext)); /* init the mbedtls entropy engine */
+	/* init the mbedtls rng context */
+	mbedtls_ctr_drbg_init(&mbedtlsContext->rngContext);
+	if (mbedtls_ctr_drbg_seed(&mbedtlsContext->rngContext, mbedtls_entropy_func, &(mbedtlsContext->entropyContext), (const unsigned char *)entropyString, entropyStringLength) != 0) {
 		return NULL;
 	}
 
-	/* create the context and attach the polarssl one in it's unique field */
+	/* create the context and attach the mbedtls one in it's unique field */
 	context = (bzrtpRNGContext_t *)malloc(sizeof(bzrtpRNGContext_t));
 
-	context->cryptoModuleData = (void *)polarsslContext;
+	context->cryptoModuleData = (void *)mbedtlsContext;
 
 	return context;
 }
 
 int bzrtpCrypto_getRandom(bzrtpRNGContext_t *context, uint8_t *output, size_t outputLength) {
-	/* get polarssl context data */
-	polarsslRNGContext_t *polarsslContext = (polarsslRNGContext_t *)context->cryptoModuleData;
-	return mbedtls_ctr_drbg_random((void *)&(polarsslContext->rngContext), (unsigned char *)output, outputLength);
+	/* get mbedtls context data */
+	mbedtlsRNGContext_t *mbedtlsContext = (mbedtlsRNGContext_t *)context->cryptoModuleData;
+	return mbedtls_ctr_drbg_random((void *)&(mbedtlsContext->rngContext), (unsigned char *)output, outputLength);
 }
 
 int bzrtpCrypto_destroyRNG(bzrtpRNGContext_t *context) {
-	/* get polarssl context data */
-	polarsslRNGContext_t *polarsslContext = (polarsslRNGContext_t *)context->cryptoModuleData;
+	/* get mbedtls context data */
+	mbedtlsRNGContext_t *mbedtlsContext = (mbedtlsRNGContext_t *)context->cryptoModuleData;
 
 	/* free the ctr_drbg and entropy contexts */
-	mbedtls_ctr_drbg_free(&polarsslContext->rngContext);
-	mbedtls_entropy_free(&polarsslContext->entropyContext);
+	mbedtls_ctr_drbg_free(&mbedtlsContext->rngContext);
+	mbedtls_entropy_free(&mbedtlsContext->entropyContext);
 
 	/* free the context structures */
-	free(polarsslContext);
+	free(mbedtlsContext);
 	free(context);
 
 	return 0;
@@ -198,16 +198,16 @@ void bzrtpCrypto_hmacSha1(const uint8_t *key,
 /* initialise de DHM context according to requested algorithm */
 bzrtpDHMContext_t *bzrtpCrypto_CreateDHMContext(uint8_t DHMAlgo, uint8_t secretLength)
 {
-	mbedtls_dhm_context *polarsslDhmContext;
+	mbedtls_dhm_context *mbedtlsDhmContext;
 
 	/* create the context */
 	bzrtpDHMContext_t *context = (bzrtpDHMContext_t *)malloc(sizeof(bzrtpDHMContext_t));
 	memset (context, 0, sizeof(bzrtpDHMContext_t));
 
-	/* create the polarssl context for DHM */
-	polarsslDhmContext=(mbedtls_dhm_context *)malloc(sizeof(mbedtls_dhm_context));
-	memset(polarsslDhmContext, 0, sizeof(mbedtls_dhm_context));
-	context->cryptoModuleData=(void *)polarsslDhmContext;
+	/* create the mbedtls context for DHM */
+	mbedtlsDhmContext=(mbedtls_dhm_context *)malloc(sizeof(mbedtls_dhm_context));
+	memset(mbedtlsDhmContext, 0, sizeof(mbedtls_dhm_context));
+	context->cryptoModuleData=(void *)mbedtlsDhmContext;
 
 	/* initialise pointer to NULL to ensure safe call to free() when destroying context */
 	context->secret = NULL;
@@ -220,22 +220,22 @@ bzrtpDHMContext_t *bzrtpCrypto_CreateDHMContext(uint8_t DHMAlgo, uint8_t secretL
 	context->secretLength = secretLength;
 	switch (DHMAlgo) {
 		case ZRTP_KEYAGREEMENT_DH2k:
-			/* set P and G in the polarssl context */
-			if ((mbedtls_mpi_read_string(&(polarsslDhmContext->P), 16, MBEDTLS_DHM_RFC3526_MODP_2048_P) != 0) ||
-			(mbedtls_mpi_read_string(&(polarsslDhmContext->G), 16, MBEDTLS_DHM_RFC3526_MODP_2048_G) != 0)) {
+			/* set P and G in the mbedtls context */
+			if ((mbedtls_mpi_read_string(&(mbedtlsDhmContext->P), 16, MBEDTLS_DHM_RFC3526_MODP_2048_P) != 0) ||
+			(mbedtls_mpi_read_string(&(mbedtlsDhmContext->G), 16, MBEDTLS_DHM_RFC3526_MODP_2048_G) != 0)) {
 				return NULL;
 			}
 			context->primeLength=256;
-			polarsslDhmContext->len=256;
+			mbedtlsDhmContext->len=256;
 			break;
 		case ZRTP_KEYAGREEMENT_DH3k:
-			/* set P and G in the polarssl context */
-			if ((mbedtls_mpi_read_string(&(polarsslDhmContext->P), 16, MBEDTLS_DHM_RFC3526_MODP_3072_P) != 0) ||
-			(mbedtls_mpi_read_string(&(polarsslDhmContext->G), 16, MBEDTLS_DHM_RFC3526_MODP_3072_G) != 0)) {
+			/* set P and G in the mbedtls context */
+			if ((mbedtls_mpi_read_string(&(mbedtlsDhmContext->P), 16, MBEDTLS_DHM_RFC3526_MODP_3072_P) != 0) ||
+			(mbedtls_mpi_read_string(&(mbedtlsDhmContext->G), 16, MBEDTLS_DHM_RFC3526_MODP_3072_G) != 0)) {
 				return NULL;
 			}
 			context->primeLength=384;
-			polarsslDhmContext->len=384;
+			mbedtlsDhmContext->len=384;
 			break;
 		default:
 			free(context);
@@ -248,13 +248,13 @@ bzrtpDHMContext_t *bzrtpCrypto_CreateDHMContext(uint8_t DHMAlgo, uint8_t secretL
 
 /* generate the random secret and compute the public value */
 void bzrtpCrypto_DHMCreatePublic(bzrtpDHMContext_t *context, int (*rngFunction)(void *, uint8_t *, size_t), void *rngContext) {
-	/* get the polarssl context */
-	mbedtls_dhm_context *polarsslContext = (mbedtls_dhm_context *)context->cryptoModuleData;
+	/* get the mbedtls context */
+	mbedtls_dhm_context *mbedtlsContext = (mbedtls_dhm_context *)context->cryptoModuleData;
 
 	/* allocate output buffer */
 	context->self = (uint8_t *)malloc(context->primeLength*sizeof(uint8_t));
 
-	mbedtls_dhm_make_public(polarsslContext, context->secretLength, context->self, context->primeLength, (int (*)(void *, unsigned char *, size_t))rngFunction, rngContext);
+	mbedtls_dhm_make_public(mbedtlsContext, context->secretLength, context->self, context->primeLength, (int (*)(void *, unsigned char *, size_t))rngFunction, rngContext);
 
 }
 
@@ -291,11 +291,11 @@ void bzrtpCrypto_aes128CfbEncrypt(const uint8_t key[16],
 		uint8_t *output)
 {
 	uint8_t IVbuffer[16];
-	size_t iv_offset=0; /* is not used by us but needed and updated by polarssl */
+	size_t iv_offset=0; /* is not used by us but needed and updated by mbedtls */
 	mbedtls_aes_context context;
 	memset (&context, 0, sizeof(mbedtls_aes_context));
 
-	/* make a local copy of IV which is modified by the polar ssl AES-CFB function */
+	/* make a local copy of IV which is modified by the mbedTLS AES-CFB function */
 	memcpy(IVbuffer, IV, 16*sizeof(uint8_t));
 
 	/* initialise the aes context and key */
@@ -323,11 +323,11 @@ void bzrtpCrypto_aes128CfbDecrypt(const uint8_t key[16],
 		uint8_t *output)
 {
 	uint8_t IVbuffer[16];
-	size_t iv_offset=0; /* is not used by us but needed and updated by polarssl */
+	size_t iv_offset=0; /* is not used by us but needed and updated by mbedtls */
 	mbedtls_aes_context context;
 	memset (&context, 0, sizeof(mbedtls_aes_context));
 
-	/* make a local copy of IV which is modified by the polar ssl AES-CFB function */
+	/* make a local copy of IV which is modified by the mbedTLS AES-CFB function */
 	memcpy(IVbuffer, IV, 16*sizeof(uint8_t));
 
 	/* initialise the aes context and key - use the mbedtls_aes_setkey_enc function as requested by the documentation of mbedtls_aes_crypt_cfb128 function */
@@ -452,7 +452,7 @@ void bzrtpCrypto_hmacSha256(const uint8_t *key,
 void bzrtpCrypto_DHMComputeSecret(bzrtpDHMContext_t *context, int (*rngFunction)(void *, uint8_t *, size_t), void *rngContext) {
 	size_t keyLength;
 
-	/* import the peer public value G^Y mod P in the polar ssl context */
+	/* import the peer public value G^Y mod P in the mbedTLS context */
 	mbedtls_dhm_read_public((mbedtls_dhm_context *)(context->cryptoModuleData), context->peer, context->primeLength);
 
 	/* compute the secret key */

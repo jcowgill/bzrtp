@@ -27,7 +27,7 @@ set(TEST_SOURCES
 	testUtils.c
 
 	../src/bzrtp.c
-	../src/cryptoPolarssl.c
+	../src/cryptoMbedTLS.c
 	../src/cryptoUtils.c
 	../src/packetParser.c
 	../src/pgpwords.c
