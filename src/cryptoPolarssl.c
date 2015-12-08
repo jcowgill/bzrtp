@@ -28,8 +28,9 @@
 #include "polarssl/entropy.h"
 #include "polarssl/ctr_drbg.h"
 
-/* Hash function sha1(sha2 is different for polarssl v1.2 and v1.3 ) */
+/* Hashs */
 #include "polarssl/sha1.h"
+#include "polarssl/sha256.h"
 
 /* Asymmetrics encryption */
 #include "polarssl/dhm.h"
@@ -38,8 +39,6 @@
 #include "polarssl/aes.h"
 
 #include "cryptoWrapper.h"
-
-/*** Common functions to polarSSL version 1.2 and 1.3 ***/
 
 /** Return available crypto functions. For now we have
  *
@@ -393,15 +392,6 @@ void bzrtpCrypto_aes256CfbDecrypt(const uint8_t key[32],
 	aes_crypt_cfb128 (&context, AES_DECRYPT, inputLength, &iv_offset, IVbuffer, input, output);
 }
 
-/*** End of code common to polarSSL version 1.2 and 1.3 ***/
-
-/* check polarssl version */
-#include <polarssl/version.h>
-#if POLARSSL_VERSION_NUMBER >= 0x01030000 /* for Polarssl version 1.3 */
-
-/* Hashs */
-#include "polarssl/sha256.h"
-
 /*
  * @brief SHA256 wrapper
  * @param[in]	input 		Input data buffer
@@ -466,76 +456,3 @@ void bzrtpCrypto_DHMComputeSecret(bzrtpDHMContext_t *context, int (*rngFunction)
 	context->key = (uint8_t *)malloc(keyLength*sizeof(uint8_t)); /* allocate key buffer */
 	dhm_calc_secret((dhm_context *)(context->cryptoModuleData), context->key, &keyLength, (int (*)(void *, unsigned char *, size_t))rngFunction, rngContext);
 }
-
-
-
-#else /* POLAR SSL VERSION 1.2 */
-
-/* Hashs */
-#include "polarssl/sha2.h"
-
-/*
- * @brief SHA256 wrapper
- * @param[in]	input 		Input data buffer
- * @param[in]   inputLength	Input data length in bytes
- * @param[in]	hmacLength	Length of output required in bytes, HMAC output is truncated to the hmacLength left bytes. 32 bytes maximum
- * @param[out]	output		Output data buffer.
- *
- */
-void bzrtpCrypto_sha256(const uint8_t *input,
-		size_t inputLength,
-		uint8_t hashLength,
-		uint8_t *output)
-{
-	uint8_t hashOutput[32];
-	sha2(input, inputLength, hashOutput, 0); /* last param to zero to select SHA256 and not SHA224 */
-
-	/* check output length, can't be>32 */
-	if (hashLength>32) {
-		memcpy(output, hashOutput, 32);
-	} else {
-		memcpy(output, hashOutput, hashLength);
-	}
-}
-
-/*
- * HMAC-SHA-256 wrapper
- * @param[in] 	key			HMAC secret key
- * @param[in] 	keyLength	HMAC key length
- * @param[in]	input 		Input data buffer
- * @param[in]   inputLength	Input data length
- * @param[in]	hmacLength	Length of output required in bytes, HMAC output is truncated to the hmacLength left bytes. 32 bytes maximum
- * @param[out]	output		Output data buffer.
- *
- */
-void bzrtpCrypto_hmacSha256(const uint8_t *key,
-		size_t keyLength,
-		const uint8_t *input,
-		size_t inputLength,
-		uint8_t hmacLength,
-		uint8_t *output)
-{
-	uint8_t hmacOutput[32];
-	sha2_hmac(key, keyLength, input, inputLength, hmacOutput, 0); /* last param to zero to select SHA256 and not SHA224 */
-
-	/* check output length, can't be>32 */
-	if (hmacLength>32) {
-		memcpy(output, hmacOutput, 32);
-	} else {
-		memcpy(output, hmacOutput, hmacLength);
-	}
-}
-
-/* compute secret - the ->peer field of context must have been set before calling this function */
-void bzrtpCrypto_DHMComputeSecret(bzrtpDHMContext_t *context, int (*rngFunction)(void *, uint8_t *, size_t), void *rngContext) {
-	size_t keyLength;
-	/* import the peer public value G^Y mod P in the polar ssl context */
-	dhm_read_public((dhm_context *)(context->cryptoModuleData), context->peer, context->primeLength);
-
-	/* compute the secret key */
-	keyLength = context->primeLength; /* undocumented but this value seems to be in/out, so we must set it to the expected key length */
-	context->key = (uint8_t *)malloc(keyLength*sizeof(uint8_t)); /* allocate key buffer */
-	dhm_calc_secret((dhm_context *)(context->cryptoModuleData), context->key, &keyLength);
-}
-
-#endif /* POLARSSL Version 1.2 */
