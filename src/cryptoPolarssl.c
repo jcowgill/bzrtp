@@ -29,7 +29,7 @@
 #include <mbedtls/ctr_drbg.h>
 
 /* Hashs */
-#include <mbedtls/sha1.h>
+#include <mbedtls/md.h>
 #include <mbedtls/sha256.h>
 
 /* Asymmetrics encryption */
@@ -132,7 +132,8 @@ bzrtpRNGContext_t *bzrtpCrypto_startRNG(const uint8_t *entropyString, uint16_t e
 	
 	mbedtls_entropy_init(&(polarsslContext->entropyContext)); /* init the polarssl entropy engine */
 	/* init the polarssl rng context */
-	if (mbedtls_ctr_drbg_init(&(polarsslContext->rngContext), mbedtls_entropy_func, &(polarsslContext->entropyContext), (const unsigned char *)entropyString, entropyStringLength) != 0) {
+	mbedtls_ctr_drbg_init(&polarsslContext->rngContext);
+	if (mbedtls_ctr_drbg_seed(&polarsslContext->rngContext, mbedtls_entropy_func, &(polarsslContext->entropyContext), (const unsigned char *)entropyString, entropyStringLength) != 0) {
 		return NULL;
 	}
 
@@ -154,8 +155,9 @@ int bzrtpCrypto_destroyRNG(bzrtpRNGContext_t *context) {
 	/* get polarssl context data */
 	polarsslRNGContext_t *polarsslContext = (polarsslRNGContext_t *)context->cryptoModuleData;
 
-	/* free the entropy context (ctr_drbg doesn't seem to need to be freed)*/
-	/*mbedtls_entropy_free(polarsslContext->entropyContext);*/
+	/* free the ctr_drbg and entropy contexts */
+	mbedtls_ctr_drbg_free(&polarsslContext->rngContext);
+	mbedtls_entropy_free(&polarsslContext->entropyContext);
 
 	/* free the context structures */
 	free(polarsslContext);
@@ -182,7 +184,8 @@ void bzrtpCrypto_hmacSha1(const uint8_t *key,
 		uint8_t *output)
 {
 	uint8_t hmacOutput[20];
-	mbedtls_sha1_hmac(key, keyLength, input, inputLength, hmacOutput);
+	const mbedtls_md_info_t *mdinfo = mbedtls_md_info_from_type(MBEDTLS_MD_SHA1);
+	mbedtls_md_hmac(mdinfo, key, keyLength, input, inputLength, hmacOutput);
 
 	/* check output length, can't be>20 */
 	if (hmacLength>20) {
@@ -434,7 +437,8 @@ void bzrtpCrypto_hmacSha256(const uint8_t *key,
 		uint8_t *output)
 {
 	uint8_t hmacOutput[32];
-	mbedtls_sha256_hmac(key, keyLength, input, inputLength, hmacOutput, 0); /* last param to zero to select SHA256 and not SHA224 */
+	const mbedtls_md_info_t *mdinfo = mbedtls_md_info_from_type(MBEDTLS_MD_SHA256);
+	mbedtls_md_hmac(mdinfo, key, keyLength, input, inputLength, hmacOutput);
 
 	/* check output length, can't be>32 */
 	if (hmacLength>32) {
@@ -452,7 +456,6 @@ void bzrtpCrypto_DHMComputeSecret(bzrtpDHMContext_t *context, int (*rngFunction)
 	mbedtls_dhm_read_public((mbedtls_dhm_context *)(context->cryptoModuleData), context->peer, context->primeLength);
 
 	/* compute the secret key */
-	keyLength = context->primeLength; /* undocumented but this value seems to be in/out, so we must set it to the expected key length */
-	context->key = (uint8_t *)malloc(keyLength*sizeof(uint8_t)); /* allocate key buffer */
-	mbedtls_dhm_calc_secret((mbedtls_dhm_context *)(context->cryptoModuleData), context->key, &keyLength, (int (*)(void *, unsigned char *, size_t))rngFunction, rngContext);
+	context->key = (uint8_t *)malloc(context->primeLength * sizeof(uint8_t)); /* allocate key buffer */
+	mbedtls_dhm_calc_secret((mbedtls_dhm_context *)(context->cryptoModuleData), context->key, context->primeLength, &keyLength, (int (*)(void *, unsigned char *, size_t))rngFunction, rngContext);
 }
